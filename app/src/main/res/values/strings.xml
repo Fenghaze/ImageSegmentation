@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">WaterlinePSPNet</string>
+    <string name="an_image">an image</string>
+    <string name="image_view">Image View</string>
+    <string name="segment">预测分割</string>
+    <string name="run_model">Running the model...</string>
+    <string name="restart">切换图片</string>
+</resources>
