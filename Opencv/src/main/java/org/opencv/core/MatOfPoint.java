@@ -8,7 +8,7 @@ public class MatOfPoint extends Mat {
     private static final int _depth = CvType.CV_32S;
     private static final int _channels = 2;
 
-    public MatOfPoint() {
+    public MatOfPoint(double box, double v) {
         super();
     }
 

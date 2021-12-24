@@ -1,11 +1,10 @@
 apply plugin: 'com.android.application'
-
+apply plugin: 'com.chaquo.python'
 repositories {
     maven {
         url "https://oss.sonatype.org/content/repositories/snapshots"
     }
 }
-
 
 android {
     compileSdkVersion 30
@@ -17,8 +16,18 @@ android {
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
-
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
+        python {
+            buildPython "D:/Anaconda/python.exe"
+            pip {
+                install "numpy"
+                install "scipy"
+                install "shapely"
+            }
+        }
     }
 
     buildTypes {
@@ -31,7 +40,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
 }
 
 dependencies {

@@ -94,6 +94,7 @@ public class PrePostProcessor {
     {
         Mat src_mat = new Mat();
         Utils.bitmapToMat(srcBitmap, src_mat);
+        Utils.bitmapToMat(srcBitmap, src_mat);
         Size srcSize = mask_canny_mat.size();
         double h = srcSize.height;
         double w = srcSize.width;
@@ -131,6 +132,7 @@ public class PrePostProcessor {
         return new Result(x_0, y_0, x_1, y_1);
     }
 
+    //mat转为array
     private static double [][] get_mat_array(Mat mat){
         int row = mat.rows();
         int col = mat.cols();

@@ -1,67 +1,68 @@
 package org.pytorch.imagesegmentation;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
 import android.Manifest;
-import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
-import org.opencv.android.Utils;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+
+import com.chaquo.python.Kwarg;
+import com.chaquo.python.PyObject;
+import com.chaquo.python.Python;
+import com.chaquo.python.android.AndroidPlatform;
+
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
 import org.pytorch.IValue;
 import org.pytorch.Module;
 import org.pytorch.Tensor;
 import org.pytorch.torchvision.TensorImageUtils;
-import android.net.Uri;
-import android.widget.Toast;
-
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.LoaderCallbackInterface;
-import org.opencv.android.OpenCVLoader;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements Runnable {
     private ImageView mImageView;       //图片显示区域
-    private Button mButtonSegment;
+    private Button mButtonSegment;      //预测按钮
     private ProgressBar mProgressBar;
     private ResultView mResultView;
     private Bitmap mBitmap = null;      //图片
-    private Module mModule = null;      //模型
-    private float mImgScaleX, mImgScaleY, mIvScaleX, mIvScaleY, mStartX, mStartY;
-
+    private Module mModule = null;      //waterline模型
+    private Module detModule = null;      //det模型
+    private Module recModule = null;      //rec模型
     private int mImageIndex = 0;
-    private String[] mTestImages = {"1.jpg", "2.jpg", "3.jpg", "5.jpg"};
+    private String[] mTestImages = {"1.jpg", "2.jpg", "3.jpg", "5.jpg", "ruler1.jpg", "test1.jpg"};
     private static final String TAG = "MainActivity";
     public static final int SELECT_PHOTH = 0;// 选择图片
     public static final int PHOTO_REQUEST_CAREMA = 1;// 拍照
@@ -119,17 +120,73 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         }
     }
 
+    // 初始化Python环境
+    void initPython(){
+        if (! Python.isStarted()) {
+            Python.start(new AndroidPlatform(this));
+        }
+    }
+
+    void callPythonCode(){
+        Python py = Python.getInstance();
+        // 调用hello.py模块中的greet函数，并传一个参数
+        // 等价用法：py.getModule("hello").get("greet").call("Android");
+        py.getModule("hello").callAttr("greet", "Android");
+
+        // 调用python内建函数help()，输出了帮助信息
+        py.getBuiltins().get("help").call();
+
+//        PyObject obj1 = py.getModule("hello").callAttr("add", 2,3);
+//        // 将Python返回值换为Java中的Integer类型
+//        Integer sum = obj1.toJava(Integer.class);
+//        Log.d(TAG,"add = "+sum.toString());
+//
+//        // 调用python函数，命名式传参，等同 sub(10,b=1,c=3)
+//        PyObject obj2 = py.getModule("hello").callAttr("sub", 10,new Kwarg("b", 1), new Kwarg("c", 3));
+//        Integer result = obj2.toJava(Integer.class);
+//        Log.d(TAG,"sub = "+result.toString());
+//
+//        // 调用Python函数，将返回的Python中的list转为Java的list
+//        PyObject obj3 = py.getModule("hello").callAttr("get_list", 10,"xx",5.6,'c');
+//        List<PyObject> pyList = obj3.asList();
+//        Log.d(TAG,"get_list = "+pyList.toString());
+//
+//        // 将Java的ArrayList对象传入Python中使用
+//        List<PyObject> params = new ArrayList<PyObject>();
+//        params.add(PyObject.fromJava("alex"));
+//        params.add(PyObject.fromJava("bruce"));
+//        py.getModule("hello").callAttr("print_list", params);
+//
+//        // Python中调用Java类
+//        PyObject obj4 = py.getModule("hello").callAttr("get_java_bean");
+//        JavaBean data = obj4.toJava(JavaBean.class);
+//        data.print();
+    }
+
+    //入口函数
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
 
+        //初始化python环境
+        initPython();
+        //调用python
+        callPythonCode();
+
         try {
             //打开图片
             mBitmap = BitmapFactory.decodeStream(getAssets().open(mTestImages[mImageIndex]));
-            //获取深度学习模型
+            //获取waterline模型
             mModule = Module.load(MainActivity.assetFilePath(getApplicationContext(), "best_model.pt"));
+            Log.d("waterline model", "load success");
+            //获取det模型
+            detModule = Module.load(MainActivity.assetFilePath(getApplicationContext(), "det_model.pt"));
+            Log.d("det model", "load success");
+            //获取rec模型
+            recModule = Module.load(MainActivity.assetFilePath(getApplicationContext(), "rec_model.pt"));
+            Log.d("rec model", "load success");
         } catch (IOException e) {
             Log.e("ImageSegmentation", "Error reading assets", e);
             finish();
@@ -313,8 +370,9 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         //输入tensor
         final Tensor inputTensor = TensorImageUtils.bitmapToFloat32Tensor(resizedBitmap, PrePostProcessor.NO_MEAN_RGB, PrePostProcessor.NO_STD_RGB);
         final long startTime = SystemClock.elapsedRealtime();
-        //获得预测mask
+        //获得waterline模型的预测mask
         final Tensor outputTensor = mModule.forward(IValue.from(inputTensor)).toTensor();
+
         final long inferenceTime = SystemClock.elapsedRealtime() - startTime;
         Log.d("ImageSegmentation",  "inference time (ms): " + inferenceTime);
         //mask tensor
@@ -339,8 +397,32 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         float startX = (float)(mResultView.getWidth() - (right-left))/2;
         float startY = top;
 
-        //检测直线段
+        //检测waterline
         ArrayList<Result> results = PrePostProcessor.detection(mBitmap, scores, ivScaleX, ivScaleY, startX, startY);
+
+        //检测bboxes
+        //图片重置大小
+        OcrProcessor.getSize(mBitmap.getHeight(), mBitmap.getWidth());
+        Bitmap resizedBitmap2 = Bitmap.createScaledBitmap(mBitmap, (int)OcrProcessor.mInputWidth, (int)OcrProcessor.mInputHeight, true);
+        //输入tensor
+        final Tensor inputTensor2 = TensorImageUtils.bitmapToFloat32Tensor(resizedBitmap2, OcrProcessor.MEAN, OcrProcessor.STD);
+        //获得det model的输出结果
+        final Tensor outputTensor2 = detModule.forward(IValue.from(inputTensor2)).toTensor(); //[1,1,x,640]
+        //tensor转为float
+        final float[] scores2 = outputTensor2.getDataAsFloatArray();
+        final float[][][] pred = OcrProcessor.transfer1to3(scores2, mBitmap.getHeight(), mBitmap.getWidth());
+
+        //识别bboxes
+        Bitmap image = OcrProcessor.toGrayscale(mBitmap);    //转为灰度图
+        //图片重置大小
+        Bitmap resizedBitmap3 = Bitmap.createScaledBitmap(image, 100, 32, true);
+        //输入tensor
+        final Tensor inputTensor3 = OcrProcessor.bitmapToFloat32Tensor(resizedBitmap3);
+        float[] input = inputTensor3.getDataAsFloatArray();
+        //获得det model的输出结果
+        final Tensor outputTensor3 = recModule.forward(IValue.from(inputTensor3)).toTensor();
+        Log.d("rec", "rec image");
+
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
