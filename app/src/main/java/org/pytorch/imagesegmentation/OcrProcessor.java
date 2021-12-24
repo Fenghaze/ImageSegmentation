@@ -241,6 +241,7 @@ public class OcrProcessor {
         return (float) score.val[0];
     }
 
+    //mat转为数组
     private static double [][] mat2array(Mat mat){
         int row = mat.rows();
         int col = mat.cols();
