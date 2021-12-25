@@ -1,7 +1,5 @@
 package org.pytorch.imagesegmentation;
 import org.opencv.core.Core;
-import org.opencv.core.MatOfDouble;
-import org.opencv.core.MatOfFloat;
 import org.opencv.core.RotatedRect;
 import org.opencv.core.Scalar;
 import org.pytorch.Tensor;
@@ -12,7 +10,6 @@ import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.Point;
 import org.opencv.imgproc.Imgproc;
 
 import java.nio.FloatBuffer;
@@ -24,7 +21,6 @@ import static java.lang.Math.abs;
 import static java.lang.Math.min;
 import static org.opencv.core.CvType.CV_32FC1;
 import static org.opencv.core.CvType.CV_8UC1;
-import static org.opencv.core.CvType.CV_8UC3;
 import static org.opencv.imgproc.Imgproc.COLOR_BGR2GRAY;
 
 
@@ -53,7 +49,8 @@ public class OcrProcessor {
     static int unclip_ratio = 2;
     static int min_size = 3;
 
-    static native int getindex();
+    static native int[][] unclip(double x1, double y1, double x2, double y2,
+                                 double x3, double y3, double x4, double y4, int unclip_ratio);
 
     //重置输入size
     public static void getSize(int height, int width){
@@ -175,7 +172,14 @@ public class OcrProcessor {
             if (box_thresh > score){
                 continue;
             }
-//            box = unclip(detbox.points, unclip_ratio).reshape(-1, 1, 2);
+
+
+            int [][]box = unclip(detbox.points[0][0], detbox.points[0][1],
+                    detbox.points[1][0], detbox.points[1][1],
+                    detbox.points[2][0], detbox.points[2][1],
+                    detbox.points[3][0], detbox.points[3][1], unclip_ratio);
+
+            //box = unclip(detbox.points, unclip_ratio).reshape(-1, 1, 2);
 //            box, sside = get_mini_boxes(box);
 //            if (sside < min_size + 2){
 //                continue;
@@ -193,19 +197,14 @@ public class OcrProcessor {
 //        return boxes, scores;
     }
 
-//    private static void unclip(double [][] box, int unclip_ratio){
-//        poly = Polygon(box)
-//        distance = poly.area * unclip_ratio / poly.length
-//        offset = pyclipper.PyclipperOffset()
-//        offset.AddPath(box, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
-//        expanded = np.array(offset.Execute(distance))
-//        return expanded
-//    }
-
     private static float box_score_fast(float [][]bitmap, double [][] _box){
         int height = bitmap.length;
         int width = bitmap[0].length;
-        double[][] box = _box.clone();
+        double[][] box = new double[_box.length][_box[0].length];
+        for(int i=0; i<_box.length; i++){
+            box[i][0] = _box[i][0];
+            box[i][1] = _box[i][1];
+        }
         //找到横纵坐标最大最小值
         sort(_box, new int[] {0,1});  //按第一列升序排序
         int xmin = (int)_box[0][0];

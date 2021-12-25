@@ -214,7 +214,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         });
 
         String str = getStrFromJNI();
-        int a = OcrProcessor.getindex();
         Log.e("use c++", str);
     }
 
@@ -369,9 +368,9 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         final float[][][] pred = OcrProcessor.transfer1to3(scores2, mBitmap.getHeight(), mBitmap.getWidth());
 
         //识别bboxes
-        Bitmap image = OcrProcessor.toGrayscale(mBitmap);    //转为灰度图
+        //Bitmap image = OcrProcessor.toGrayscale(mBitmap);    //转为灰度图
         //图片重置大小
-        Bitmap resizedBitmap3 = Bitmap.createScaledBitmap(image, 100, 32, true);
+        Bitmap resizedBitmap3 = Bitmap.createScaledBitmap(mBitmap, 100, 32, true);
         //输入tensor
         final Tensor inputTensor3 = OcrProcessor.bitmapToFloat32Tensor(resizedBitmap3);
         float[] input = inputTensor3.getDataAsFloatArray();
