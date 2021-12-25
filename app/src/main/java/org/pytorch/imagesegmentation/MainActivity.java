@@ -214,12 +214,11 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         });
 
         String str = getStrFromJNI();
-
+        int a = OcrProcessor.getindex();
         Log.e("use c++", str);
     }
 
     public native String getStrFromJNI();
-
     static {
         System.loadLibrary("hello");
     }

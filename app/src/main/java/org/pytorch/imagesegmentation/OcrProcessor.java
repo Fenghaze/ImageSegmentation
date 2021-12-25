@@ -53,6 +53,8 @@ public class OcrProcessor {
     static int unclip_ratio = 2;
     static int min_size = 3;
 
+    static native int getindex();
+
     //重置输入size
     public static void getSize(int height, int width){
         if (height > width){
