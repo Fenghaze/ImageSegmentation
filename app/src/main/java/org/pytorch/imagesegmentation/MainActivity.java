@@ -20,6 +20,9 @@ import android.os.Environment;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -113,6 +116,37 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             }
             return file.getAbsolutePath();
         }
+    }
+
+    public void onSettingsClicked() {
+        startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_action_options, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                break;
+            case R.id.settings:
+                onSettingsClicked();
+                break;
+            case R.id.about:
+                onAboutClicked();
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void onAboutClicked() {
+        startActivity(new Intent(MainActivity.this, AboutActivity.class));
     }
 
     //入口函数
