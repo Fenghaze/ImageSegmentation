@@ -246,9 +246,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 startActivity(intent);  //打开相机预览Activity
             }
         });
-
-        String str = getStrFromJNI();
-        Log.e("use c++", str);
     }
 
     public native String getStrFromJNI();
